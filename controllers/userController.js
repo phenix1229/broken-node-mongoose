@@ -1,5 +1,15 @@
 const User = require('../models/Users');
 const bcrypt = require('bcryptjs');
+const mongoose = require('mongoose');
+require('dotenv').config();
+
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser:true,
+  useUnifiedTopology:true,
+  useCreateIndex:true
+}).then(()=>{
+  console.log('MongoDB connected');
+}).catch(err => console.log(`Mongo Error: ${err}`));
 
 module.exports = {
   register: (req, res) => {
@@ -8,9 +18,9 @@ module.exports = {
 
       //validate input
       if (
-        req.body.name.length === 0 ||
-        req.body.email.length === 0 ||
-        req.body.password.length === 0
+        name.length === 0 ||
+        email.length === 0 ||
+        password.length === 0
       ) {
         return res.json({ message: 'All fields must be completed' });
       }
@@ -42,8 +52,8 @@ module.exports = {
 
   login: (req, res) => {
     return new Promise((resolve, reject) => {
-      findOne({ email: req.body.email })
-        .then(user => {
+      User.findOne({ email: req.body.email })
+        .then((user) => {
           bcrypt
             .compare(req.body.password, user.password)
             .then(user => {
@@ -55,19 +65,20 @@ module.exports = {
             })
             .catch(err => {
               return res.status(500).json({ message: 'Server error', err });
-            });
+            })
         })
         .catch(err => reject(err));
-    });
+    })
   },
+
   updateProfile: (req, res) => {
     return new Promise((resolve, reject) => {
       User.findById({ _id: req.params.id })
         .then(user => {
           const { name, email } = req.body;
 
-          user.name = req.body.name ? req.body.name : user.name;
-          user.email = req.body.email ? req.body.email : user.email;
+          user.name = name ? name : user.name;
+          user.email = email ? email : user.email;
 
           user
             .save()
